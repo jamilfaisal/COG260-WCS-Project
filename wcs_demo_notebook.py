@@ -12,6 +12,9 @@ speakerInfo = readSpeakerData('./WCS_data_core/spkr-lsas.txt')
 
 diff_perc_dict = {}
 
+
+# new hypo: there is gender difference in color naming
+
 for i in range(1, 111):
 
     curr_lang_naming = namingData[i]
@@ -20,9 +23,21 @@ for i in range(1, 111):
     if i == 97:
         print(curr_lang_speaker)
         print(len(curr_lang_naming))
-    curr_male_index = []
 
+    curr_male_index = []
     curr_female_index = []
+    # 1) stratify the languages in WCS by roughly #color terms present in that language, such that you have groups of
+    # languages that
+    #     - have 3 basic color terms
+    #     - have 4 basic color terms
+    #     - have 5 basic color terms
+    #      - have …….
+    # Then, within each group where you know #color terms is held roughly constant,
+    # you compare things between M and F groups.
+    # You then report the results of gender difference in each of these groups,
+    # where #color terms is controlled for. If the hypothesis is held generally true,
+    # we should expect gender difference to be present in many groups
+    # (as opposed to only in those groups with higher #color terms).
     if (len(curr_lang_speaker) >= 10):
 
         # gender groups
