@@ -83,6 +83,8 @@ num_of_trues = 0
 num_of_falses = 0
 
 for language_index in range(1, 111):
+    if language_index == 51:
+        a = 1
     responses_for_lang = namingData[language_index]
     age_gender_of_speaker_for_lang = clean_age_gender_of_speaker_for_lang(speakerInfo[language_index])
     if len(age_gender_of_speaker_for_lang) < 10:
@@ -94,19 +96,30 @@ for language_index in range(1, 111):
 
     male_more_color_terms_than_female = 0
     female_more_color_terms_than_male = 0
-    for trial in range(1000):
+    equal_color_terms = 0
+    for trial in range(100):
         male_indices_sample, female_indices_sample = sample_male_and_female_indices()
         uniq_male_color_term_names, uniq_female_color_term_names = get_uniq_color_terms(male_indices_sample,
                                                                                         female_indices_sample)
-        if len(uniq_male_color_term_names) > len(uniq_female_color_term_names):
-            male_more_color_terms_than_female += 1
+        if len(uniq_male_color_term_names) == len(uniq_female_color_term_names):
+            equal_color_terms += 1
         else:
-            female_more_color_terms_than_male += 1
-    lang_index_is_female_more[language_index] = (female_more_color_terms_than_male > male_more_color_terms_than_female)
+            if len(uniq_male_color_term_names) > len(uniq_female_color_term_names):
+                male_more_color_terms_than_female += 1
+            else:
+                female_more_color_terms_than_male += 1
 
-    if lang_index_is_female_more[language_index]:
+    comparison_str = 'E'  # E for equal M for male F for female
+    if female_more_color_terms_than_male > male_more_color_terms_than_female and female_more_color_terms_than_male > equal_color_terms:
+        comparison_str = 'F'
+    elif male_more_color_terms_than_female > female_more_color_terms_than_male and male_more_color_terms_than_female > equal_color_terms:
+        comparison_str = "M"
+
+    lang_index_is_female_more[language_index] = comparison_str
+
+    if comparison_str == 'F':
         num_of_trues += 1
-    else:
+    elif comparison_str == 'M':
         num_of_falses += 1
     print(language_index, lang_index_is_female_more[language_index])
     print("Trues: ", num_of_trues)
