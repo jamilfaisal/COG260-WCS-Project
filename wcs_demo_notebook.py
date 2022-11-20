@@ -77,19 +77,44 @@ def clean_age_gender_of_speaker_for_lang(unclean_age_gender_of_speaker_for_lang)
             cleaned_age_gender_of_speaker_for_lang[speaker_index] = unclean_age_gender_of_speaker_for_lang[speaker_index]
     return cleaned_age_gender_of_speaker_for_lang
 
+# https://stackoverflow.com/questions/16868457/python-sorting-dictionary-by-length-of-values
+def sort_by_values_len(dict):
+    dict_len= {key: len(value) for key, value in dict.items()}
+    import operator
+    sorted_key_list = sorted(dict_len.items(), key=operator.itemgetter(1), reverse=True)
+    sorted_dict = [{item[0]: dict[item [0]]} for item in sorted_key_list]
+    return sorted_dict
 
+
+def get_most_occurrence_element_keep_tie(lst):
+    uniq_lst = set(lst)
+    max_elements = []
+    max_occurrence = 0
+    for element in uniq_lst:
+        num_of_occurrence = lst.count(element)
+
+        if max_occurrence < num_of_occurrence:
+            max_occurrence = num_of_occurrence
+            max_elements = [element]
+        elif max_occurrence == num_of_occurrence:
+            max_elements.append(element)
+
+    return max_elements, max_occurrence
+
+
+lang_ind_group_by_num_of_color_terms = {}  # num_of_term: ind
+lang_ind_and_winner_group_by_num_of_color_terms = {}  # num_of_term:(ind,winner)
 lang_index_is_female_more = {}
 num_of_trues = 0
 num_of_falses = 0
 
 for language_index in range(1, 111):
-    if language_index == 51:
+    if language_index == 110:
         a = 1
     responses_for_lang = namingData[language_index]
     age_gender_of_speaker_for_lang = clean_age_gender_of_speaker_for_lang(speakerInfo[language_index])
     if len(age_gender_of_speaker_for_lang) < 10:
         continue
-
     num_of_males, num_of_females = count_males_and_females()
     male_indices, female_indices = get_male_and_female_indices()
     number_of_samples = min(num_of_males, num_of_females)
@@ -97,7 +122,7 @@ for language_index in range(1, 111):
     male_more_color_terms_than_female = 0
     female_more_color_terms_than_male = 0
     equal_color_terms = 0
-    for trial in range(100):
+    for trial in range(500):
         male_indices_sample, female_indices_sample = sample_male_and_female_indices()
         uniq_male_color_term_names, uniq_female_color_term_names = get_uniq_color_terms(male_indices_sample,
                                                                                         female_indices_sample)
@@ -124,6 +149,29 @@ for language_index in range(1, 111):
     print(language_index, lang_index_is_female_more[language_index])
     print("Trues: ", num_of_trues)
     print("Falses: ", num_of_falses)
+
+    # stratify into groups based on numbers of color terms START
+    all_uniq_male_color_term_names, all_uniq_female_color_term_names = \
+        get_uniq_color_terms(male_indices, female_indices)
+
+    all_uniq_color_term_names = list(set(all_uniq_male_color_term_names+all_uniq_female_color_term_names))
+    number_of_uniq_color_term_names = len(all_uniq_color_term_names)
+
+    if number_of_uniq_color_term_names in lang_ind_group_by_num_of_color_terms.keys():
+        lang_ind_group_by_num_of_color_terms[number_of_uniq_color_term_names].append(language_index)
+    else:
+        lang_ind_group_by_num_of_color_terms[number_of_uniq_color_term_names] = [language_index]
+    # stratify into groups based on numbers of color terms END
+
+    # organize the finegrain genders based on groups START
+    ind_and_winner = (language_index, comparison_str)
+    if number_of_uniq_color_term_names in lang_ind_and_winner_group_by_num_of_color_terms.keys():
+        lang_ind_and_winner_group_by_num_of_color_terms[number_of_uniq_color_term_names].append(ind_and_winner)
+    else:
+        lang_ind_and_winner_group_by_num_of_color_terms[number_of_uniq_color_term_names] = [ind_and_winner]
+    # organize the finegrain genders based on groups END
+
+
     # Skip languages with fewer than 10 speakers
 
     # if language_index == 20:
@@ -148,4 +196,18 @@ for language_index in range(1, 111):
 
 # print(len(diff_perc_dict.values()))
 # print(len(diff_perc_dict.keys()))
+list_of_sorted_lang_ind_and_winner_dicts = sort_by_values_len(lang_ind_and_winner_group_by_num_of_color_terms)
+list_of_most_occurrence_by_group = []
+for color_term_group in list_of_sorted_lang_ind_and_winner_dicts:
+    key = list(color_term_group)[0]  # the current key, which is also the number of color terms that this group has
+    winners_of_this_group = []
+    # go through members of this group, get the gender that has used more terms
+    for language_member in color_term_group[key]:
+        winners_of_this_group.append(language_member[1])
+
+    most_occurrence_of_this_group = max(winners_of_this_group, key=winners_of_this_group.count)
+    most_occurrence_elements, most_occurrence_count = get_most_occurrence_element_keep_tie(winners_of_this_group)
+    list_of_most_occurrence_by_group.append([key, len(color_term_group[key]), most_occurrence_elements,
+                                             most_occurrence_count])
+
 print(lang_index_is_female_more)
