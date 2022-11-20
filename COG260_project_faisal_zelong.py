@@ -143,6 +143,9 @@ speakerInfo = readSpeakerData('./WCS_data_core/spkr-lsas.txt')
 lang_index_is_female_more = {}
 
 # TODO: Debug code. Remove before submission.
+lang_ind_group_by_num_of_color_terms = {}  # num_of_term: ind
+lang_ind_and_winner_group_by_num_of_color_terms = {}  # num_of_term:(ind,winner)
+list_of_most_occurrence_by_group = []
 female_more_than_male = 0
 male_more_than_female = 0
 equal = 0
@@ -171,5 +174,26 @@ for language_index in range(1, 111):
     print("Female More: ", female_more_than_male)
     print("Male More: ", male_more_than_female)
     print("Equal: ", equal)
+
+    # stratify into groups based on numbers of color terms START
+    all_uniq_male_color_term_names, all_uniq_female_color_term_names = \
+        get_uniq_color_terms(male_indices, female_indices)
+
+    all_uniq_color_term_names = list(set(all_uniq_male_color_term_names+all_uniq_female_color_term_names))
+    number_of_uniq_color_term_names = len(all_uniq_color_term_names)
+
+    if number_of_uniq_color_term_names in lang_ind_group_by_num_of_color_terms.keys():
+        lang_ind_group_by_num_of_color_terms[number_of_uniq_color_term_names].append(language_index)
+    else:
+        lang_ind_group_by_num_of_color_terms[number_of_uniq_color_term_names] = [language_index]
+    # stratify into groups based on numbers of color terms END
+
+    # organize the finegrain genders based on groups START
+    ind_and_winner = (language_index, lang_index_is_female_more[language_index])
+    if number_of_uniq_color_term_names in lang_ind_and_winner_group_by_num_of_color_terms.keys():
+        lang_ind_and_winner_group_by_num_of_color_terms[number_of_uniq_color_term_names].append(ind_and_winner)
+    else:
+        lang_ind_and_winner_group_by_num_of_color_terms[number_of_uniq_color_term_names] = [ind_and_winner]
+    # organize the finegrain genders based on groups END
 
 print(lang_index_is_female_more)
