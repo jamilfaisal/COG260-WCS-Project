@@ -131,6 +131,30 @@ def value_for_lang_index():
         return "E"
 
 
+# https://stackoverflow.com/questions/16868457/python-sorting-dictionary-by-length-of-values
+def sort_by_values_len(dict):
+    dict_len= {key: len(value) for key, value in dict.items()}
+    import operator
+    sorted_key_list = sorted(dict_len.items(), key=operator.itemgetter(1), reverse=True)
+    sorted_dict = [{item[0]: dict[item [0]]} for item in sorted_key_list]
+    return sorted_dict
+
+def get_most_occurrence_element_keep_tie(lst):
+    uniq_lst = set(lst)
+    max_elements = []
+    max_occurrence = 0
+    for element in uniq_lst:
+        num_of_occurrence = lst.count(element)
+
+        if max_occurrence < num_of_occurrence:
+            max_occurrence = num_of_occurrence
+            max_elements = [element]
+        elif max_occurrence == num_of_occurrence:
+            max_elements.append(element)
+
+    return max_elements, max_occurrence
+
+
 # Language Index, Speaker Index, Color Chip Index, Color Chip Speaker Response
 namingData = readNamingData('./WCS_data_core/term.txt')
 # Language Index, Speaker Index, List[Tuple(Speaker Age, Speaker Gender)]
@@ -141,11 +165,14 @@ speakerInfo = readSpeakerData('./WCS_data_core/spkr-lsas.txt')
 #   2. "F": The total unique list of color terms used by female speakers is more than male speakers
 #   3. "E": The total unique list of color terms used is the same for both genders
 lang_index_is_female_more = {}
-
-# TODO: Debug code. Remove before submission.
 lang_ind_group_by_num_of_color_terms = {}  # num_of_term: ind
 lang_ind_and_winner_group_by_num_of_color_terms = {}  # num_of_term:(ind,winner)
-list_of_most_occurrence_by_group = []
+list_of_most_occurrence_by_group = []  # [how many term this group of languages use,
+#                                         how many member has the most occurring str,
+#                                         the most occurring str of this group,
+#                                         how many times this str has occurred]
+
+# TODO: Debug code. Remove before submission.
 female_more_than_male = 0
 male_more_than_female = 0
 equal = 0
@@ -195,5 +222,22 @@ for language_index in range(1, 111):
     else:
         lang_ind_and_winner_group_by_num_of_color_terms[number_of_uniq_color_term_names] = [ind_and_winner]
     # organize the finegrain genders based on groups END
+
+# sort the groups based on number of members
+list_of_sorted_lang_ind_and_winner_dicts = sort_by_values_len(lang_ind_and_winner_group_by_num_of_color_terms)
+
+# get the most re-occurring key ('M','F','E') of each group START
+for color_term_group in list_of_sorted_lang_ind_and_winner_dicts:
+    key = list(color_term_group)[0]  # the current key, which is also the number of color terms that this group has
+    winners_of_this_group = []
+    # go through members of this group, get the gender that has used more terms
+    for language_member in color_term_group[key]:
+        winners_of_this_group.append(language_member[1])
+
+    most_occurrence_of_this_group = max(winners_of_this_group, key=winners_of_this_group.count)
+    most_occurrence_elements, most_occurrence_count = get_most_occurrence_element_keep_tie(winners_of_this_group)
+    list_of_most_occurrence_by_group.append([key, len(color_term_group[key]), most_occurrence_elements,
+                                             most_occurrence_count])
+# get the most re-occurring key ('M','F','E') of each group END
 
 print(lang_index_is_female_more)
