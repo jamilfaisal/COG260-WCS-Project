@@ -1,4 +1,7 @@
 from wcs_helper_functions import *
+import random
+from scipy import stats
+import statistics
 from random import choices
 
 
@@ -44,6 +47,29 @@ def get_uniq_color_terms(male_ind, female_ind):
             female_color_term_names.append(speaker_responses)
     return list(set(male_color_term_names)), list(set(female_color_term_names))
 
+def get_number_of_color_term_used(male_ind,female_ind):
+    """
+    Parameters
+    ----------
+    male_ind: List of indices for all male speakers of a specific language
+    female_ind: List of indices for all female speakers of a specific language
+
+    Returns
+    -------
+    Tuple(List[str], List[str])
+        - The first list contains number of color terms used by each male speakers to describe all color chips
+        - The second list contains number of color terms used by each female speakers to describe all color chips
+    """
+    number_of_color_term_each_male_used = []
+    number_of_color_term_each_female_used = []
+    for speaker_index in male_ind:
+        terms_used_by_speaker_at_index = len(list(set(responses_for_lang[speaker_index].values())))
+        number_of_color_term_each_male_used.append(terms_used_by_speaker_at_index)
+    for speaker_index in female_ind:
+        terms_used_by_speaker_at_index = len(list(set(responses_for_lang[speaker_index].values())))
+        number_of_color_term_each_female_used.append(terms_used_by_speaker_at_index)
+    return number_of_color_term_each_male_used, number_of_color_term_each_female_used
+
 
 def sample_male_and_female_indices():
     """
@@ -55,8 +81,8 @@ def sample_male_and_female_indices():
         - The second list contains a sample of female speaker indices.
         - The length for both lists equals number_of_samples
     """
-    male_ind_sample = choices(male_indices, k=number_of_samples)
-    female_ind_sample = choices(female_indices, k=number_of_samples)
+    male_ind_sample = random.sample(male_indices, k=number_of_samples)
+    female_ind_sample = random.sample(female_indices, k=number_of_samples)
     return male_ind_sample, female_ind_sample
 
 
@@ -113,6 +139,51 @@ def run_trials(num_of_trials):
             female_more_colorterms_than_male += 1
     return male_more_colorterms_than_female, female_more_colorterms_than_male, equal_colorterms
 
+def t_test(alpha=0.05):
+    """
+    Runs num_of_trials trials to calculate the proportion of trials where:
+        1. Mean of male used color terms significantly greater than mean of female used color terms
+        2. Mean of male used color terms significantly lesser than mean of female used color terms
+        3. Mean of male used color terms no significant different than mean of female used color terms
+    at significance level 95% = alpha = 0.05
+    Parameters
+    ----------
+    num_of_trials: Number of trials to run
+    alpha: significance level
+
+    Returns
+    -------
+    Tuple(int, int, int):
+        1. Mean of male used color terms significantly greater than mean of female used color terms
+        2. Mean of male used color terms significantly lesser than mean of female used color terms
+        3. Mean of male used color terms no significant different than mean of female used color terms
+    """
+
+    # it looks  like there is no need use equal number between 2 genders because we are using the mean here.
+    male_indices_sample, female_indices_sample = get_male_and_female_indices()
+    male_term_len_list, female_term_len_list = get_number_of_color_term_used(male_indices_sample,
+                                                                                    female_indices_sample)
+    # H_null: male >= female
+    # H_alt: male < female
+    t_test_two_sided = stats.ttest_ind(male_term_len_list, female_term_len_list,
+                                     alternative='two-sided')
+    p_val = t_test_two_sided[1]
+
+    if p_val < alpha:  # significant diff
+        # is male mean sig greater than female mean
+        t_test_greater = stats.ttest_ind(male_term_len_list, female_term_len_list,
+                                     alternative='greater')
+        # is male mean sig less than female mean
+        t_test_less = stats.ttest_ind(male_term_len_list, female_term_len_list,
+                                     alternative='less')
+        if t_test_greater[1] < alpha:
+            return "M"
+        if t_test_less[1] < alpha:
+            return "F"
+        print("error at t test")
+        return "error"
+    else:  # no significant diff
+        return "E"
 
 def value_for_lang_index():
     """
@@ -155,6 +226,32 @@ def get_most_occurrence_element_keep_tie(lst):
     return max_elements, max_occurrence
 
 
+def get_dict_to_list_by_fine_grained_gender_most_occurrence(list_of_sorted_lang_ind_and_winner_dicts, count_index):
+    list_of_most_occurrence_by_group = []  # [how many term this group of languages use,
+    #                                         how many member has the most occurring str,
+    #                                         the most occurring str of this group,
+    #                                         how many times this str has occurred]
+
+    for a_group_of_languages_with_same_number_of_color_terms in list_of_sorted_lang_ind_and_winner_dicts:
+        # the current key, which is also the number of color terms that this group has
+        key = list(a_group_of_languages_with_same_number_of_color_terms)[0]
+        fine_grained_gender_of_each_language_member = []
+        # go through members of this group, get the gender that has used more terms
+        for language_member in a_group_of_languages_with_same_number_of_color_terms[key]:
+            fine_grained_gender_of_each_language_member.append(language_member[count_index])  # 1: unique 2: t test mean
+
+        most_occurrence_of_this_group = max(fine_grained_gender_of_each_language_member,
+                                            key=fine_grained_gender_of_each_language_member.count)
+
+        most_occurrence_elements, most_occurrence_count = \
+            get_most_occurrence_element_keep_tie(fine_grained_gender_of_each_language_member)
+
+        list_of_most_occurrence_by_group.append([key, len(a_group_of_languages_with_same_number_of_color_terms[key]),
+                                                 most_occurrence_elements,
+                                                 most_occurrence_count])
+    return list_of_most_occurrence_by_group
+
+
 # Language Index, Speaker Index, Color Chip Index, Color Chip Speaker Response
 namingData = readNamingData('./WCS_data_core/term.txt')
 # Language Index, Speaker Index, List[Tuple(Speaker Age, Speaker Gender)]
@@ -165,12 +262,10 @@ speakerInfo = readSpeakerData('./WCS_data_core/spkr-lsas.txt')
 #   2. "F": The total unique list of color terms used by female speakers is more than male speakers
 #   3. "E": The total unique list of color terms used is the same for both genders
 lang_index_is_female_more = {}
+lang_index_is_female_more_t_test = {}
 lang_ind_group_by_num_of_color_terms = {}  # num_of_term: ind
 lang_ind_and_winner_group_by_num_of_color_terms = {}  # num_of_term:(ind,winner)
-list_of_most_occurrence_by_group = []  # [how many term this group of languages use,
-#                                         how many member has the most occurring str,
-#                                         the most occurring str of this group,
-#                                         how many times this str has occurred]
+
 
 # TODO: Debug code. Remove before submission.
 female_more_than_male = 0
@@ -187,8 +282,13 @@ for language_index in range(1, 111):
     male_indices, female_indices = get_male_and_female_indices()
     number_of_samples = min(len(male_indices), len(female_indices))
 
-    male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(100)
+    male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(20)
     lang_index_is_female_more[language_index] = value_for_lang_index()
+
+    # t-test START
+    t_str = t_test()  # "E", "M", "F", "error"
+    lang_index_is_female_more_t_test[language_index] = t_str
+    # t-test END
 
     # TODO: Debug code. Remove before submission.
     if lang_index_is_female_more[language_index] == 'F':
@@ -216,7 +316,8 @@ for language_index in range(1, 111):
     # stratify into groups based on numbers of color terms END
 
     # organize the finegrain genders based on groups START
-    ind_and_winner = (language_index, lang_index_is_female_more[language_index])
+    ind_and_winner = (language_index, lang_index_is_female_more[language_index],
+                      lang_index_is_female_more_t_test[language_index])
     if number_of_uniq_color_term_names in lang_ind_and_winner_group_by_num_of_color_terms.keys():
         lang_ind_and_winner_group_by_num_of_color_terms[number_of_uniq_color_term_names].append(ind_and_winner)
     else:
@@ -227,17 +328,11 @@ for language_index in range(1, 111):
 list_of_sorted_lang_ind_and_winner_dicts = sort_by_values_len(lang_ind_and_winner_group_by_num_of_color_terms)
 
 # get the most re-occurring key ('M','F','E') of each group START
-for color_term_group in list_of_sorted_lang_ind_and_winner_dicts:
-    key = list(color_term_group)[0]  # the current key, which is also the number of color terms that this group has
-    winners_of_this_group = []
-    # go through members of this group, get the gender that has used more terms
-    for language_member in color_term_group[key]:
-        winners_of_this_group.append(language_member[1])
 
-    most_occurrence_of_this_group = max(winners_of_this_group, key=winners_of_this_group.count)
-    most_occurrence_elements, most_occurrence_count = get_most_occurrence_element_keep_tie(winners_of_this_group)
-    list_of_most_occurrence_by_group.append([key, len(color_term_group[key]), most_occurrence_elements,
-                                             most_occurrence_count])
-# get the most re-occurring key ('M','F','E') of each group END
+lst_unique_most_occur = \
+    get_dict_to_list_by_fine_grained_gender_most_occurrence(list_of_sorted_lang_ind_and_winner_dicts, 1)
+lst_t_test_mean_most_occur = \
+    get_dict_to_list_by_fine_grained_gender_most_occurrence(list_of_sorted_lang_ind_and_winner_dicts, 2)
+
 
 print(lang_index_is_female_more)
