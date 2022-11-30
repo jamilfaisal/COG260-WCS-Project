@@ -241,7 +241,8 @@ def get_dict_to_list_by_fine_grained_gender_most_occurrence(list_of_sorted_lang_
     list_of_most_occurrence_by_group = []  # [how many term this group of languages use,
     #                                         how many member has the most occurring str,
     #                                         the most occurring str of this group,
-    #                                         how many times this str has occurred]
+    #                                         how many times this str has occurred,
+    #                                         percentage (this occur/total member)]
 
     for a_group_of_languages_with_same_number_of_color_terms in list_of_sorted_lang_ind_and_winner_dicts:
         # the current key, which is also the number of color terms that this group has
@@ -257,9 +258,12 @@ def get_dict_to_list_by_fine_grained_gender_most_occurrence(list_of_sorted_lang_
         most_occurrence_elements, most_occurrence_count = \
             get_most_occurrence_element_keep_tie(fine_grained_gender_of_each_language_member)
 
+        occurrence_percentage = most_occurrence_count/len(a_group_of_languages_with_same_number_of_color_terms[key])
+
         list_of_most_occurrence_by_group.append([key, len(a_group_of_languages_with_same_number_of_color_terms[key]),
                                                  most_occurrence_elements,
-                                                 most_occurrence_count])
+                                                 most_occurrence_count,
+                                                 occurrence_percentage])
     return list_of_most_occurrence_by_group
 
 
@@ -267,6 +271,8 @@ def get_dict_to_list_by_fine_grained_gender_most_occurrence(list_of_sorted_lang_
 namingData = readNamingData('./WCS_data_core/term.txt')
 # Language Index, Speaker Index, List[Tuple(Speaker Age, Speaker Gender)]
 speakerInfo = readSpeakerData('./WCS_data_core/spkr-lsas.txt')
+# fociData[1][1]:{'A:0','B:1'} language-speaker-colorterm-foci-coord
+fociData = readFociData('./WCS_data_core/foci-exp.txt');
 
 # Dictionary where key is the language index and the value is a string:
 #   1. "M": The total unique list of color terms used by male speakers is more than female speakers
@@ -274,6 +280,7 @@ speakerInfo = readSpeakerData('./WCS_data_core/spkr-lsas.txt')
 #   3. "E": The total unique list of color terms used is the same for both genders
 lang_index_is_female_more = {}
 lang_index_is_female_more_t_test = {}
+
 lang_ind_group_by_num_of_color_terms = {}  # num_of_term: ind
 lang_ind_and_winner_group_by_num_of_color_terms = {}  # num_of_term:(ind,winner)
 
@@ -283,17 +290,28 @@ female_more_than_male = 0
 male_more_than_female = 0
 equal = 0
 
+
+def get_num_of_basic_color_term(language_index):
+    num_of_basic_term_for_each_speaker = []
+    for speaker_index in fociData[language_index]:
+        num_of_basic_term_for_each_speaker.append(len(fociData[language_index][speaker_index]))
+    mean_of_basic_term = statistics.mean(num_of_basic_term_for_each_speaker)
+    return mean_of_basic_term
+
+
 for language_index in range(1, 111):
+
     responses_for_lang = namingData[language_index]
     age_gender_of_speaker_for_lang = clean_age_gender_of_speaker_for_lang(speakerInfo[language_index])
     # Skip languages with fewer than 10 speakers
     if len(age_gender_of_speaker_for_lang) < 10:
         continue
 
+
     male_indices, female_indices = get_male_and_female_indices()
     number_of_samples = min(len(male_indices), len(female_indices))
 
-    male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(500)
+    male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(50)
     lang_index_is_female_more[language_index] = value_for_lang_index()
 
     # t-test START
@@ -313,37 +331,28 @@ for language_index in range(1, 111):
     print("Male More: ", male_more_than_female)
     print("Equal: ", equal)
 
-    # stratify into groups based on numbers of color terms START
-    all_uniq_male_color_term_names, all_uniq_female_color_term_names = \
-        get_uniq_color_terms(male_indices, female_indices)
+    # grouping based on basic color terms START
+    mean_of_basic_color_term_for_lang = round(get_num_of_basic_color_term(language_index))
 
-    all_uniq_color_term_names = list(set(all_uniq_male_color_term_names+all_uniq_female_color_term_names))
-    number_of_uniq_color_term_names = len(all_uniq_color_term_names)
+    language_index_and_result = (language_index, lang_index_is_female_more[language_index],
+                                 lang_index_is_female_more_t_test[language_index])
 
-    if number_of_uniq_color_term_names in lang_ind_group_by_num_of_color_terms:
-        lang_ind_group_by_num_of_color_terms[number_of_uniq_color_term_names].append(language_index)
+    if mean_of_basic_color_term_for_lang in lang_grouping:
+        lang_grouping[mean_of_basic_color_term_for_lang].append(language_index_and_result)
     else:
-        lang_ind_group_by_num_of_color_terms[number_of_uniq_color_term_names] = [language_index]
-    # stratify into groups based on numbers of color terms END
-
-    # organize the finegrain genders based on groups START
-    ind_and_winner = (language_index, lang_index_is_female_more[language_index],
-                      lang_index_is_female_more_t_test[language_index])
-    if number_of_uniq_color_term_names in lang_ind_and_winner_group_by_num_of_color_terms.keys():
-        lang_ind_and_winner_group_by_num_of_color_terms[number_of_uniq_color_term_names].append(ind_and_winner)
-    else:
-        lang_ind_and_winner_group_by_num_of_color_terms[number_of_uniq_color_term_names] = [ind_and_winner]
-    # organize the finegrain genders based on groups END
+        lang_grouping[mean_of_basic_color_term_for_lang] = [language_index_and_result]
+    # grouping based on basic color terms END
 
 # sort the groups based on number of members
-list_of_sorted_lang_ind_and_winner_dicts = sort_by_values_len(lang_ind_and_winner_group_by_num_of_color_terms)
+lang_grouping_sorted = sort_by_values_len(lang_grouping)
 
-# get the most re-occurring key ('M','F','E') of each group START
+# get the most re-occurring key ('M','F','E') of each group and other results together for display START
 
-lst_unique_most_occur = \
-    get_dict_to_list_by_fine_grained_gender_most_occurrence(list_of_sorted_lang_ind_and_winner_dicts, 1)
-lst_t_test_mean_most_occur = \
-    get_dict_to_list_by_fine_grained_gender_most_occurrence(list_of_sorted_lang_ind_and_winner_dicts, 2)
+lang_grouping_unique_most_occur = \
+    get_dict_to_list_by_fine_grained_gender_most_occurrence(lang_grouping_sorted, 1)
+lang_grouping_t_test_mean_most_occur = \
+    get_dict_to_list_by_fine_grained_gender_most_occurrence(lang_grouping_sorted, 2)
+# get the most re-occurring key ('M','F','E') of each group and other results together for display END
 
 
 print(lang_index_is_female_more)
