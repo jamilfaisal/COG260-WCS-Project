@@ -433,8 +433,9 @@ def plot_pie_charts_for_lang_groups(language_groups):
         pie = ax.pie(pie_chart_values, labels=mylabels, autopct='%1.2f%%')
         ax.axis('equal')
         plt.title("Result for Languages with " + str(num_of_b_color_term) + " basic color terms", y=1.08)
-        plt.legend(pie[0], mylabels, bbox_to_anchor=(1, 0), loc="lower right",
-                   bbox_transform=plt.gcf().transFigure)
+        if len(mylabels) > 1:
+            plt.legend(pie[0], mylabels, bbox_to_anchor=(1, 0), loc="lower right",
+                       bbox_transform=plt.gcf().transFigure)
         plt.savefig("Pie_Charts/" + str(num_of_b_color_term))
 
 
