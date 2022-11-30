@@ -64,9 +64,17 @@ def get_number_of_color_term_used(male_ind,female_ind):
     number_of_color_term_each_female_used = []
     for speaker_index in male_ind:
         terms_used_by_speaker_at_index = len(list(set(responses_for_lang[speaker_index].values())))
+
+        if '*' in list(set(responses_for_lang[speaker_index].values())):
+            terms_used_by_speaker_at_index -= 1
+
         number_of_color_term_each_male_used.append(terms_used_by_speaker_at_index)
     for speaker_index in female_ind:
         terms_used_by_speaker_at_index = len(list(set(responses_for_lang[speaker_index].values())))
+
+        if '*' in list(set(responses_for_lang[speaker_index].values())):
+            terms_used_by_speaker_at_index -= 1
+
         number_of_color_term_each_female_used.append(terms_used_by_speaker_at_index)
     return number_of_color_term_each_male_used, number_of_color_term_each_female_used
 
@@ -105,10 +113,6 @@ def clean_age_gender_of_speaker_for_lang(unclean_age_gender_of_speaker_for_lang)
             cleaned_age_gender_of_speaker_for_lang[speaker_index] = unclean_age_gender_of_speaker_for_lang[
                 speaker_index]
     return cleaned_age_gender_of_speaker_for_lang
-
-
-def get_uniq_color_terms_for_each_index(male_indices_sample, female_indices_sample):
-    pass
 
 
 def run_trials(num_of_trials):
