@@ -482,7 +482,7 @@ if __name__ == "__main__":
         male_indices, female_indices = get_male_and_female_indices()
 
         # 4. Run trials and count how many "F", "M", and "E" we get from all trials
-        male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(5)
+        male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(500)
 
         # 5. Assign the language "F", "M", or "E" based on which letter has the highest count
         lang_index_is_female_more[language_index] = choose_m_f_e_for_lang_index()
