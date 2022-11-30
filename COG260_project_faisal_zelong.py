@@ -1,5 +1,7 @@
 import numpy as np
 import random
+
+from matplotlib import pyplot as plt
 from scipy import stats
 import statistics
 
@@ -411,6 +413,31 @@ def data_cleaning():
         return age_gender_of_speaker_for_lang_temp
 
 
+def plot_pie_charts_for_lang_groups(language_groups):
+    for num_of_b_color_term, val in language_groups.items():
+        all_responses_in_letters = [x[1] for x in val]
+        mylabels = []
+        all_responses_counted = []
+        if all_responses_in_letters.count("F") >= 1:
+            mylabels.append("Females More")
+            all_responses_counted.append(all_responses_in_letters.count("F"))
+        if all_responses_in_letters.count("M") >= 1:
+            mylabels.append("Males More")
+            all_responses_counted.append(all_responses_in_letters.count("M"))
+        if all_responses_in_letters.count("E") >= 1:
+            mylabels.append("Equal")
+            all_responses_counted.append(all_responses_in_letters.count("E"))
+        pie_chart_values = np.array(all_responses_counted)
+
+        fig, ax = plt.subplots()
+        pie = ax.pie(pie_chart_values, labels=mylabels, autopct='%1.2f%%')
+        ax.axis('equal')
+        plt.title("Result for Languages with " + str(num_of_b_color_term) + " basic color terms", y=1.08)
+        plt.legend(pie[0], mylabels, bbox_to_anchor=(1, 0), loc="lower right",
+                   bbox_transform=plt.gcf().transFigure)
+        plt.savefig("Pie_Charts/" + str(num_of_b_color_term))
+
+
 if __name__ == "__main__":
     # Language Index, Speaker Index, Color Chip Index, Color Chip Speaker Response
     namingData = readNamingData('./WCS_data_core/term.txt')
@@ -455,7 +482,7 @@ if __name__ == "__main__":
         male_indices, female_indices = get_male_and_female_indices()
 
         # 4. Run trials and count how many "F", "M", and "E" we get from all trials
-        male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(1000)
+        male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(5)
 
         # 5. Assign the language "F", "M", or "E" based on which letter has the highest count
         lang_index_is_female_more[language_index] = choose_m_f_e_for_lang_index()
@@ -495,10 +522,13 @@ if __name__ == "__main__":
         else:
             lang_grouping[mean_of_basic_color_term_for_lang] = [language_index_and_result]
 
-    # 10 Sort the groups in increasing order based on how many languages they contain
+    # 10. Plot pie charts for each group
+    plot_pie_charts_for_lang_groups(lang_grouping)
+
+    # 11. Sort the groups in increasing order based on how many languages they contain
     lang_grouping_sorted = sort_by_values_len(lang_grouping)
 
-    # 11. Get the most re-occurring key ('M','F','E') of each group and organize other results for display
+    # 12. Get the most re-occurring key ('M','F','E') of each group and organize other results for display
     lang_grouping_unique_most_occur = \
         get_dict_to_list_by_fine_grained_gender_most_occurrence(lang_grouping_sorted, 1)
     lang_grouping_t_test_mean_most_occur = \
