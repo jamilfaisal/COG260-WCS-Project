@@ -144,8 +144,10 @@ def run_trials(num_of_trials):
         mean_female = statistics.mean(uniq_female_color_term_each_used)
 
         p_val_male, p_val_female = permutation(uniq_female_color_term_each_used,uniq_female_color_term_each_used)
-        if p_val_male > 0.05 or p_val_female > 0.05:
-            print("OH MA GAWD")
+        if p_val_male > 0.05:
+            permut_trial[0] = 'T'
+        if p_val_female > 0.05:
+            permut_trial[1] = 'T'
 
         if mean_male == mean_female:
             equal_colorterms += 1
@@ -275,6 +277,10 @@ def count_threshold(permu_lst, mean_threshold, operation_str):
         for permu_value in permu_lst:
             if permu_value < mean_threshold:
                 count += 1
+    if operation_str == 'equal':
+        for permu_value in permu_lst:
+            if permu_value == mean_threshold:
+                count += 1
     return count
 
 
@@ -291,21 +297,21 @@ def permutation(num_of_terms_each_male_used, num_of_terms_each_female_used):
     mean_female_permut = 0
 
     for i in range(0, 1000):
-        permu_freq = np.random.permutation(all_terms_used)
+        all_terms_used_permut = np.random.permutation(all_terms_used)
 
-        num_of_terms_each_male_used_permut = all_terms_used[:len(num_of_terms_each_male_used)]
-        num_of_terms_each_female_used_permut = all_terms_used[-len(num_of_terms_each_female_used):]
+        num_of_terms_each_male_used_permut = all_terms_used_permut[:len(num_of_terms_each_male_used)]
+        num_of_terms_each_female_used_permut = all_terms_used_permut[-len(num_of_terms_each_female_used):]
 
-        mean_male_permut = statistics.mean(num_of_terms_each_male_used)
+        mean_male_permut = statistics.mean(num_of_terms_each_male_used_permut)
         mean_female_permut = statistics.mean(num_of_terms_each_female_used_permut)
 
         permu_expect_array_male.append(mean_male_permut)
         permu_expect_array_female.append(mean_female_permut)
 
-    count_no_different_male = count_threshold(permu_expect_array_male, mean_male, 'less')
+    count_no_different_male = count_threshold(permu_expect_array_male, mean_male, 'equal')
     permutation_p_val_male = count_no_different_male / 1000
 
-    count_no_different_female = count_threshold(permu_expect_array_male, mean_male, 'less')
+    count_no_different_female = count_threshold(permu_expect_array_female, mean_female, 'equal')
     permutation_p_val_female = count_no_different_female / 1000
 
     return permutation_p_val_male, permutation_p_val_female
@@ -344,17 +350,17 @@ def get_num_of_basic_color_term(language_index):
 
 
 for language_index in range(1, 111):
+    permut_trial = ['F', 'F']
     responses_for_lang = namingData[language_index]
     age_gender_of_speaker_for_lang = clean_age_gender_of_speaker_for_lang(speakerInfo[language_index])
     # Skip languages with fewer than 10 speakers
     if len(age_gender_of_speaker_for_lang) < 10:
         continue
 
-
     male_indices, female_indices = get_male_and_female_indices()
     number_of_samples = min(len(male_indices), len(female_indices))
 
-    male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(50)
+    male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(5)
     lang_index_is_female_more[language_index] = value_for_lang_index()
 
     # permutation test start
@@ -387,7 +393,8 @@ for language_index in range(1, 111):
     language_index_and_result = (language_index,
                                  lang_index_is_female_more[language_index],
                                  lang_index_is_female_more_t_test[language_index],
-                                 permutation_p_val_male,permutation_p_val_female)
+                                 permutation_p_val_male,permutation_p_val_female,
+                                 permut_trial)
 
     if mean_of_basic_color_term_for_lang in lang_grouping:
         lang_grouping[mean_of_basic_color_term_for_lang].append(language_index_and_result)
