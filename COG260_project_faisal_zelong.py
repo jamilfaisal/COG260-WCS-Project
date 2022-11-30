@@ -2,6 +2,7 @@ import numpy as np
 import random
 from scipy import stats
 import statistics
+
 from wcs_helper_functions import readFociData, readSpeakerData, readNamingData
 
 
@@ -324,7 +325,7 @@ def count_threshold(permu_lst, mean_threshold, operation_str):
     return count
 
 
-def permutation(num_of_terms_ech_male_used, num_of_terms_ech_female_used):
+def calculate_permutation_p_values(num_of_terms_ech_male_used, num_of_terms_ech_female_used):
     """
     Runs a permutation test on the number of unique terms used by males and females
     Parameters
@@ -363,6 +364,19 @@ def permutation(num_of_terms_ech_male_used, num_of_terms_ech_female_used):
     permutation_p_value_female = count_no_different_female / 1000
 
     return permutation_p_value_male, permutation_p_value_female
+
+
+def run_permutation_test():
+    final_permutation_result = ['F', 'F']
+    num_of_terms_each_male_used, num_of_terms_each_female_used = \
+        get_number_of_color_term_used(male_indices, female_indices)
+    permutation_pval_male, permutation_pval_female = \
+        calculate_permutation_p_values(num_of_terms_each_male_used, num_of_terms_each_female_used)
+    if permutation_pval_male > 0.05:
+        final_permutation_result[0] = 'T'
+    if permutation_pval_female > 0.05:
+        final_permutation_result[1] = 'T'
+    return permutation_pval_male, permutation_pval_female, final_permutation_result
 
 
 def get_num_of_basic_color_term(language_idx: int):
@@ -459,15 +473,7 @@ if __name__ == "__main__":
         print("Equal: ", equal)
 
         # 6. Run permutation test on number of unique terms used by all male and female speakers
-        num_of_terms_each_male_used, num_of_terms_each_female_used = \
-            get_number_of_color_term_used(male_indices, female_indices)
-        permut_trial = ['F', 'F']
-        permutation_p_val_male, permutation_p_val_female = \
-            permutation(num_of_terms_each_male_used, num_of_terms_each_female_used)
-        if permutation_p_val_male > 0.05:
-            permut_trial[0] = 'T'
-        if permutation_p_val_female > 0.05:
-            permut_trial[1] = 'T'
+        permutation_p_val_male, permutation_p_val_female, permut_trial = run_permutation_test()
 
         # 7. Run T-test
         t_str = t_test()  # "E", "M", "F", "error"
