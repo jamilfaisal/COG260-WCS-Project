@@ -47,7 +47,8 @@ def get_uniq_color_terms(male_ind, female_ind):
             female_color_term_names.append(speaker_responses)
     return list(set(male_color_term_names)), list(set(female_color_term_names))
 
-def get_number_of_color_term_used(male_ind,female_ind):
+
+def get_number_of_color_term_used(male_ind, female_ind):
     """
     Parameters
     ----------
@@ -157,6 +158,7 @@ def run_trials(num_of_trials):
             female_more_colorterms_than_male += 1
     return male_more_colorterms_than_female, female_more_colorterms_than_male, equal_colorterms
 
+
 def t_test(alpha=0.05):
     """
     Runs num_of_trials trials to calculate the proportion of trials where:
@@ -179,20 +181,21 @@ def t_test(alpha=0.05):
     # it looks  like there is no need use equal number between 2 genders because we are using the mean here.
     male_indices_sample, female_indices_sample = get_male_and_female_indices()
     male_term_len_list, female_term_len_list = get_number_of_color_term_used(male_indices_sample,
-                                                                                    female_indices_sample)
+                                                                             female_indices_sample)
     # H_null: male >= female
     # H_alt: male < female
     t_test_two_sided = stats.ttest_ind(male_term_len_list, female_term_len_list,
-                                     alternative='two-sided')
+                                       alternative='two-sided')
+
     p_val = t_test_two_sided[1]
 
     if p_val < alpha:  # significant diff
         # is male mean sig greater than female mean
         t_test_greater = stats.ttest_ind(male_term_len_list, female_term_len_list,
-                                     alternative='greater')
+                                         alternative='greater')
         # is male mean sig less than female mean
         t_test_less = stats.ttest_ind(male_term_len_list, female_term_len_list,
-                                     alternative='less')
+                                      alternative='less')
         if t_test_greater[1] < alpha:
             return "M"
         if t_test_less[1] < alpha:
@@ -201,6 +204,7 @@ def t_test(alpha=0.05):
         return "error"
     else:  # no significant diff
         return "E"
+
 
 def value_for_lang_index():
     """
@@ -219,11 +223,12 @@ def value_for_lang_index():
         return "E"
 
 def sort_by_values_len(dict):
-    dict_len= {key: len(value) for key, value in dict.items()}
+    dict_len = {key: len(value) for key, value in dict.items()}
     import operator
     sorted_key_list = sorted(dict_len.items(), key=operator.itemgetter(1), reverse=True)
-    sorted_dict = [{item[0]: dict[item [0]]} for item in sorted_key_list]
+    sorted_dict = [{item[0]: dict[item[0]]} for item in sorted_key_list]
     return sorted_dict
+
 
 def get_most_occurrence_element_keep_tie(lst):
     uniq_lst = set(lst)
@@ -334,7 +339,10 @@ lang_index_is_female_more_t_test = {}
 lang_ind_group_by_num_of_color_terms = {}  # num_of_term: ind
 lang_ind_and_winner_group_by_num_of_color_terms = {}  # num_of_term:(ind,winner)
 
-
+lang_grouping = {}
+lang_grouping_sorted = {}
+lang_grouping_unique_most_occur = {}
+lang_grouping_t_test_mean_most_occur = {}
 # TODO: Debug code. Remove before submission.
 female_more_than_male = 0
 male_more_than_female = 0
@@ -412,6 +420,5 @@ lang_grouping_unique_most_occur = \
 lang_grouping_t_test_mean_most_occur = \
     get_dict_to_list_by_fine_grained_gender_most_occurrence(lang_grouping_sorted, 2)
 # get the most re-occurring key ('M','F','E') of each group and other results together for display END
-
 
 print(lang_index_is_female_more)
