@@ -107,6 +107,10 @@ def clean_age_gender_of_speaker_for_lang(unclean_age_gender_of_speaker_for_lang)
     return cleaned_age_gender_of_speaker_for_lang
 
 
+def get_uniq_color_terms_for_each_index(male_indices_sample, female_indices_sample):
+    pass
+
+
 def run_trials(num_of_trials):
     """
     Runs num_of_trials trials to calculate the proportion of trials where:
@@ -129,11 +133,15 @@ def run_trials(num_of_trials):
     equal_colorterms = 0
     for trial in range(num_of_trials):
         male_indices_sample, female_indices_sample = sample_male_and_female_indices()
-        uniq_male_color_term_names, uniq_female_color_term_names = get_uniq_color_terms(male_indices_sample,
-                                                                                        female_indices_sample)
-        if len(uniq_male_color_term_names) == len(uniq_female_color_term_names):
+        uniq_male_color_term_each_used, uniq_female_color_term_each_used = \
+            get_number_of_color_term_used(male_indices_sample, female_indices_sample)
+
+        mean_male = statistics.mean(uniq_male_color_term_each_used)
+        mean_female = statistics.mean(uniq_female_color_term_each_used)
+
+        if mean_male == mean_female:
             equal_colorterms += 1
-        elif len(uniq_male_color_term_names) > len(uniq_female_color_term_names):
+        elif mean_male > mean_female:
             male_more_colorterms_than_female += 1
         else:
             female_more_colorterms_than_male += 1
@@ -148,7 +156,6 @@ def t_test(alpha=0.05):
     at significance level 95% = alpha = 0.05
     Parameters
     ----------
-    num_of_trials: Number of trials to run
     alpha: significance level
 
     Returns
@@ -282,7 +289,7 @@ for language_index in range(1, 111):
     male_indices, female_indices = get_male_and_female_indices()
     number_of_samples = min(len(male_indices), len(female_indices))
 
-    male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(20)
+    male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(500)
     lang_index_is_female_more[language_index] = value_for_lang_index()
 
     # t-test START
@@ -309,7 +316,7 @@ for language_index in range(1, 111):
     all_uniq_color_term_names = list(set(all_uniq_male_color_term_names+all_uniq_female_color_term_names))
     number_of_uniq_color_term_names = len(all_uniq_color_term_names)
 
-    if number_of_uniq_color_term_names in lang_ind_group_by_num_of_color_terms.keys():
+    if number_of_uniq_color_term_names in lang_ind_group_by_num_of_color_terms:
         lang_ind_group_by_num_of_color_terms[number_of_uniq_color_term_names].append(language_index)
     else:
         lang_ind_group_by_num_of_color_terms[number_of_uniq_color_term_names] = [language_index]
