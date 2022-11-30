@@ -1,7 +1,8 @@
-from wcs_helper_functions import *
+import numpy as np
 import random
 from scipy import stats
 import statistics
+from wcs_helper_functions import readFociData, readSpeakerData, readNamingData
 
 
 def get_male_and_female_indices():
