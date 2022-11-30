@@ -79,7 +79,7 @@ def get_number_of_color_term_used(male_ind, female_ind):
     return number_of_color_term_each_male_used, number_of_color_term_each_female_used
 
 
-def sample_male_and_female_indices():
+def sample_male_and_female_indices(number_of_samples):
     """
     Randomly selects (without replacement) indices from male and female speakers, number_of_samples times
     Returns
@@ -132,26 +132,28 @@ def run_trials(num_of_trials):
         2. Number of trials where females used more unique color terms than males.
         3. Number of trials where both genders used the same amount of unique color terms
     """
+    number_of_samples = min(len(male_indices), len(female_indices))
     male_more_colorterms_than_female = 0
     female_more_colorterms_than_male = 0
     equal_colorterms = 0
     for trial in range(num_of_trials):
-        male_indices_sample, female_indices_sample = sample_male_and_female_indices()
+        male_indices_sample, female_indices_sample = sample_male_and_female_indices(number_of_samples)
         uniq_male_color_term_each_used, uniq_female_color_term_each_used = \
             get_number_of_color_term_used(male_indices_sample, female_indices_sample)
 
-        mean_male = statistics.mean(uniq_male_color_term_each_used)
-        mean_female = statistics.mean(uniq_female_color_term_each_used)
+        mean_uniq_color_terms_male = statistics.mean(uniq_male_color_term_each_used)
+        mean_uniq_color_term_female = statistics.mean(uniq_female_color_term_each_used)
 
-        p_val_male, p_val_female = permutation(uniq_female_color_term_each_used, uniq_female_color_term_each_used)
-        if p_val_male > 0.05:
-            permut_trial[0] = 'T'
-        if p_val_female > 0.05:
-            permut_trial[1] = 'T'
+        # TODO: Remove permutation test for each trial
+        # p_val_male, p_val_female = permutation(uniq_female_color_term_each_used, uniq_female_color_term_each_used)
+        # if p_val_male > 0.05:
+        #     permut_trial[0] = 'T'
+        # if p_val_female > 0.05:
+        #     permut_trial[1] = 'T'
 
-        if mean_male == mean_female:
+        if mean_uniq_color_terms_male == mean_uniq_color_term_female:
             equal_colorterms += 1
-        elif mean_male > mean_female:
+        elif mean_uniq_color_terms_male > mean_uniq_color_term_female:
             male_more_colorterms_than_female += 1
         else:
             female_more_colorterms_than_male += 1
@@ -163,7 +165,7 @@ def t_test(alpha=0.05):
     Runs num_of_trials trials to calculate the proportion of trials where:
         1. Mean of male used color terms significantly greater than mean of female used color terms
         2. Mean of male used color terms significantly lesser than mean of female used color terms
-        3. Mean of male used color terms no significant different than mean of female used color terms
+        3. Mean of male used color terms no significant different from mean of female used color terms
     at significance level 95% = alpha = 0.05
     Parameters
     ----------
@@ -174,7 +176,7 @@ def t_test(alpha=0.05):
     Tuple(int, int, int):
         1. Mean of male used color terms significantly greater than mean of female used color terms
         2. Mean of male used color terms significantly lesser than mean of female used color terms
-        3. Mean of male used color terms no significant different than mean of female used color terms
+        3. Mean of male used color terms no significant different from mean of female used color terms
     """
 
     # it looks  like there is no need use equal number between 2 genders because we are using the mean here.
@@ -205,7 +207,7 @@ def t_test(alpha=0.05):
         return "E"
 
 
-def value_for_lang_index():
+def choose_m_f_e_for_lang_index():
     """
     Returns
     -------
@@ -223,6 +225,16 @@ def value_for_lang_index():
 
 
 def sort_by_values_len(dct):
+    """
+    Convert dictionary values from lists to lengths of lists and sort dictionary based on its values in increasing order
+    Parameters
+    ----------
+    dct: dict[any, List[any]]
+
+    Returns
+    -------
+    A dictionary of key, int sorted in increasing order by its values
+    """
     dict_len = {key: len(value) for key, value in dct.items()}
     import operator
     sorted_key_list = sorted(dict_len.items(), key=operator.itemgetter(1), reverse=True)
@@ -231,6 +243,16 @@ def sort_by_values_len(dct):
 
 
 def get_most_occurrence_element_keep_tie(lst):
+    """
+    Given a list, find the most occurring element(s)
+    Parameters
+    ----------
+    lst: A list of elements
+
+    Returns
+    -------
+    A tuple of the most occurring element(s) and the number of occurrences for such elements
+    """
     uniq_lst = set(lst)
     max_elements = []
     max_occurrence = 0
@@ -277,6 +299,18 @@ def get_dict_to_list_by_fine_grained_gender_most_occurrence(list_of_sorted_lang_
 
 
 def count_threshold(permu_lst, mean_threshold, operation_str):
+    """
+    Helper function for permutation test
+    Parameters
+    ----------
+    permu_lst
+    mean_threshold
+    operation_str
+
+    Returns
+    -------
+
+    """
     count = 0
     if operation_str == 'less':
         for permu_value in permu_lst:
@@ -290,6 +324,17 @@ def count_threshold(permu_lst, mean_threshold, operation_str):
 
 
 def permutation(num_of_terms_ech_male_used, num_of_terms_ech_female_used):
+    """
+    Runs a permutation test on the number of unique terms used by males and females
+    Parameters
+    ----------
+    num_of_terms_ech_male_used
+    num_of_terms_ech_female_used
+
+    Returns
+    -------
+
+    """
     # permutation test START
     permu_expect_array_male = []
     permu_expect_array_female = []
@@ -319,103 +364,135 @@ def permutation(num_of_terms_ech_male_used, num_of_terms_ech_female_used):
     return permutation_p_value_male, permutation_p_value_female
 
 
-# Language Index, Speaker Index, Color Chip Index, Color Chip Speaker Response
-namingData = readNamingData('./WCS_data_core/term.txt')
-# Language Index, Speaker Index, List[Tuple(Speaker Age, Speaker Gender)]
-speakerInfo = readSpeakerData('./WCS_data_core/spkr-lsas.txt')
-# fociData[1][1]:{'A:0','B:1'} language-speaker-colorterm-foci-coord
-fociData = readFociData('./WCS_data_core/foci-exp.txt')
+def get_num_of_basic_color_term(language_idx: int):
+    """
+    Returns the approximate number of basic color terms for a specific language
+    Parameters
+    ----------
+    language_idx: The language index for the language we want to find the number of basic color terms
 
-# Dictionary where key is the language index and the value is a string:
-#   1. "M": The total unique list of color terms used by male speakers is more than female speakers
-#   2. "F": The total unique list of color terms used by female speakers is more than male speakers
-#   3. "E": The total unique list of color terms used is the same for both genders
-lang_index_is_female_more = {}
-lang_index_is_female_more_t_test = {}
-
-lang_ind_group_by_num_of_color_terms = {}  # num_of_term: ind
-lang_ind_and_winner_group_by_num_of_color_terms = {}  # num_of_term:(ind,winner)
-
-lang_grouping = {}
-lang_grouping_sorted = {}
-lang_grouping_unique_most_occur = {}
-lang_grouping_t_test_mean_most_occur = {}
-# TODO: Debug code. Remove before submission.
-female_more_than_male = 0
-male_more_than_female = 0
-equal = 0
-
-
-def get_num_of_basic_color_term(language_idx):
+    Returns
+    -------
+    The average of all numbers of basic color terms across all speakers of the language
+    """
     num_of_basic_term_for_each_speaker = []
     for speaker_index in fociData[language_idx]:
         num_of_basic_term_for_each_speaker.append(len(fociData[language_idx][speaker_index]))
-    mean_of_basic_term = statistics.mean(num_of_basic_term_for_each_speaker)
-    return mean_of_basic_term
+    return statistics.mean(num_of_basic_term_for_each_speaker)
 
 
-for language_index in range(1, 111):
-    permut_trial = ['F', 'F']
-    responses_for_lang = namingData[language_index]
-    age_gender_of_speaker_for_lang = clean_age_gender_of_speaker_for_lang(speakerInfo[language_index])
+def data_cleaning():
+    """
+    Performs data cleaning and decides whether to skip the language based on the number of speakers it has
+    Returns
+    -------
+    Either -1 or the cleaned dictionary containing the age and gender of the all speakers for the language
+    """
+    age_gender_of_speaker_for_lang_temp = clean_age_gender_of_speaker_for_lang(speakerInfo[language_index])
     # Skip languages with fewer than 10 speakers
-    if len(age_gender_of_speaker_for_lang) < 10:
-        continue
+    if len(age_gender_of_speaker_for_lang_temp) < 10:
+        return -1
+    else:
+        return age_gender_of_speaker_for_lang_temp
 
-    male_indices, female_indices = get_male_and_female_indices()
-    number_of_samples = min(len(male_indices), len(female_indices))
 
-    male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(5)
-    lang_index_is_female_more[language_index] = value_for_lang_index()
+if __name__ == "__main__":
+    # Language Index, Speaker Index, Color Chip Index, Color Chip Speaker Response
+    namingData = readNamingData('./WCS_data_core/term.txt')
+    # Language Index, Speaker Index, List[Tuple(Speaker Age, Speaker Gender)]
+    speakerInfo = readSpeakerData('./WCS_data_core/spkr-lsas.txt')
+    # fociData[1][1]:{'A:0','B:1'} language-speaker-colorterm-foci-coord
+    fociData = readFociData('./WCS_data_core/foci-exp.txt')
 
-    # permutation test start
-    num_of_terms_each_male_used, num_of_terms_each_female_used = \
-        get_number_of_color_term_used(male_indices, female_indices)
+    # Dictionary where key is the language index and the value is a string:
+    #   1. "M": The total unique list of color terms used by male speakers is more than female speakers
+    #   2. "F": The total unique list of color terms used by female speakers is more than male speakers
+    #   3. "E": The total unique list of color terms used is the same for both genders
+    lang_index_is_female_more = {}
+    lang_index_is_female_more_t_test = {}
 
-    permutation_p_val_male, permutation_p_val_female = \
-        permutation(num_of_terms_each_male_used, num_of_terms_each_female_used)
+    lang_ind_group_by_num_of_color_terms = {}  # num_of_term: ind
+    lang_ind_and_winner_group_by_num_of_color_terms = {}  # num_of_term:(ind,winner)
 
-    # t-test START
-    t_str = t_test()  # "E", "M", "F", "error"
-    lang_index_is_female_more_t_test[language_index] = t_str
-    # t-test END
+    lang_grouping = {}
+    lang_grouping_sorted = {}
+    lang_grouping_unique_most_occur = {}
+    lang_grouping_t_test_mean_most_occur = {}
 
     # TODO: Debug code. Remove before submission.
-    if lang_index_is_female_more[language_index] == 'F':
-        female_more_than_male += 1
-    elif lang_index_is_female_more[language_index] == 'M':
-        male_more_than_female += 1
-    else:
-        equal += 1
-    print(language_index, lang_index_is_female_more[language_index])
-    print("Female More: ", female_more_than_male)
-    print("Male More: ", male_more_than_female)
-    print("Equal: ", equal)
+    female_more_than_male = 0
+    male_more_than_female = 0
+    equal = 0
 
-    # grouping based on basic color terms START
-    mean_of_basic_color_term_for_lang = round(get_num_of_basic_color_term(language_index))
+    for language_index in range(1, 111):
 
-    language_index_and_result = (language_index,
-                                 lang_index_is_female_more[language_index],
-                                 lang_index_is_female_more_t_test[language_index],
-                                 permutation_p_val_male, permutation_p_val_female,
-                                 permut_trial)
+        # 1. Get speaker data for language
+        responses_for_lang = namingData[language_index]
 
-    if mean_of_basic_color_term_for_lang in lang_grouping:
-        lang_grouping[mean_of_basic_color_term_for_lang].append(language_index_and_result)
-    else:
-        lang_grouping[mean_of_basic_color_term_for_lang] = [language_index_and_result]
-    # grouping based on basic color terms END
+        # 2. Data cleaning
+        result = data_cleaning()
+        if result == -1:
+            continue
+        else:
+            age_gender_of_speaker_for_lang = result
 
-# sort the groups based on number of members
-lang_grouping_sorted = sort_by_values_len(lang_grouping)
+        # 3. Split into gender groups
+        male_indices, female_indices = get_male_and_female_indices()
 
-# get the most re-occurring key ('M','F','E') of each group and other results together for display START
+        # 4. Run trials and count how many "F", "M", and "E" we get from all trials
+        male_more_color_terms_than_female, female_more_color_terms_than_male, equal_color_terms = run_trials(1000)
 
-lang_grouping_unique_most_occur = \
-    get_dict_to_list_by_fine_grained_gender_most_occurrence(lang_grouping_sorted, 1)
-lang_grouping_t_test_mean_most_occur = \
-    get_dict_to_list_by_fine_grained_gender_most_occurrence(lang_grouping_sorted, 2)
-# get the most re-occurring key ('M','F','E') of each group and other results together for display END
+        # 5. Assign the language "F", "M", or "E" based on which letter has the highest count
+        lang_index_is_female_more[language_index] = choose_m_f_e_for_lang_index()
 
-print(lang_index_is_female_more)
+        # TODO: Debug code. Remove before submission.
+        if lang_index_is_female_more[language_index] == 'F':
+            female_more_than_male += 1
+        elif lang_index_is_female_more[language_index] == 'M':
+            male_more_than_female += 1
+        else:
+            equal += 1
+        print(language_index, lang_index_is_female_more[language_index])
+        print("Female More: ", female_more_than_male)
+        print("Male More: ", male_more_than_female)
+        print("Equal: ", equal)
+
+        # 6. Run permutation test on number of unique terms used by all male and female speakers
+        num_of_terms_each_male_used, num_of_terms_each_female_used = \
+            get_number_of_color_term_used(male_indices, female_indices)
+        permut_trial = ['F', 'F']
+        permutation_p_val_male, permutation_p_val_female = \
+            permutation(num_of_terms_each_male_used, num_of_terms_each_female_used)
+        if permutation_p_val_male > 0.05:
+            permut_trial[0] = 'T'
+        if permutation_p_val_female > 0.05:
+            permut_trial[1] = 'T'
+
+        # 7. Run T-test
+        t_str = t_test()  # "E", "M", "F", "error"
+        lang_index_is_female_more_t_test[language_index] = t_str
+
+        # 8. Calculate the number of basic color terms for this language
+        mean_of_basic_color_term_for_lang = round(get_num_of_basic_color_term(language_index))
+
+        # 8.1 Organize all results for this language into a dictionary
+        language_index_and_result = (language_index,
+                                     lang_index_is_female_more[language_index],
+                                     lang_index_is_female_more_t_test[language_index],
+                                     permutation_p_val_male, permutation_p_val_female,
+                                     permut_trial)
+
+        # 9. Group the language based on the number of color terms
+        if mean_of_basic_color_term_for_lang in lang_grouping:
+            lang_grouping[mean_of_basic_color_term_for_lang].append(language_index_and_result)
+        else:
+            lang_grouping[mean_of_basic_color_term_for_lang] = [language_index_and_result]
+
+    # 10 Sort the groups in increasing order based on how many languages they contain
+    lang_grouping_sorted = sort_by_values_len(lang_grouping)
+
+    # 11. Get the most re-occurring key ('M','F','E') of each group and organize other results for display
+    lang_grouping_unique_most_occur = \
+        get_dict_to_list_by_fine_grained_gender_most_occurrence(lang_grouping_sorted, 1)
+    lang_grouping_t_test_mean_most_occur = \
+        get_dict_to_list_by_fine_grained_gender_most_occurrence(lang_grouping_sorted, 2)
