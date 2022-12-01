@@ -187,8 +187,8 @@ def t_test(alpha=0.05):
     male_indices_sample, female_indices_sample = get_male_and_female_indices()
     male_term_len_list, female_term_len_list = get_number_of_color_term_used(male_indices_sample,
                                                                              female_indices_sample)
-    # H_null: male >= female
-    # H_alt: male < female
+    # H_null: male == female
+    # H_alt: male < female/male > female
     t_test_two_sided = stats.ttest_ind(male_term_len_list, female_term_len_list,
                                        alternative='two-sided')
 
