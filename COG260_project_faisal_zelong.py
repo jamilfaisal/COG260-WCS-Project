@@ -342,6 +342,7 @@ def calculate_permutation_p_values(num_of_terms_ech_male_used, num_of_terms_ech_
     # permutation test START
     permu_expect_array_male = []
     permu_expect_array_female = []
+    permu_expect_array_diff = []
     all_terms_used = num_of_terms_ech_male_used + num_of_terms_ech_female_used
 
     mean_male = statistics.mean(num_of_terms_ech_male_used)
@@ -358,6 +359,7 @@ def calculate_permutation_p_values(num_of_terms_ech_male_used, num_of_terms_ech_
 
         permu_expect_array_male.append(mean_male_permut)
         permu_expect_array_female.append(mean_female_permut)
+        permu_expect_array_diff.append(mean_male_permut - mean_female_permut)
 
     count_no_different_male = count_threshold(permu_expect_array_male, mean_male, 'equal')
     permutation_p_value_male = count_no_different_male / 1000
@@ -365,20 +367,25 @@ def calculate_permutation_p_values(num_of_terms_ech_male_used, num_of_terms_ech_
     count_no_different_female = count_threshold(permu_expect_array_female, mean_female, 'equal')
     permutation_p_value_female = count_no_different_female / 1000
 
-    return permutation_p_value_male, permutation_p_value_female
+    count_no_different_diff = count_threshold(permu_expect_array_diff, mean_male-mean_female, 'equal')
+    permutation_p_value_diff = count_no_different_diff / 1000
+
+    return permutation_p_value_male, permutation_p_value_female, permutation_p_value_diff
 
 
 def run_permutation_test():
-    final_permutation_result = ['F', 'F']
+    final_permutation_result = ['F', 'F','F']
     num_of_terms_each_male_used, num_of_terms_each_female_used = \
         get_number_of_color_term_used(male_indices, female_indices)
-    permutation_pval_male, permutation_pval_female = \
+    permutation_pval_male, permutation_pval_female, permutation_p_val_diff = \
         calculate_permutation_p_values(num_of_terms_each_male_used, num_of_terms_each_female_used)
     if permutation_pval_male > 0.05:
         final_permutation_result[0] = 'T'
     if permutation_pval_female > 0.05:
         final_permutation_result[1] = 'T'
-    return permutation_pval_male, permutation_pval_female, final_permutation_result
+    if permutation_p_val_diff > 0.05:
+        final_permutation_result[2] = 'T'
+    return permutation_pval_male, permutation_pval_female, permutation_p_val_diff, final_permutation_result
 
 
 def get_num_of_basic_color_term(language_idx: int):
@@ -501,7 +508,7 @@ if __name__ == "__main__":
         print("Equal: ", equal)
 
         # 6. Run permutation test on number of unique terms used by all male and female speakers
-        permutation_p_val_male, permutation_p_val_female, permut_trial = run_permutation_test()
+        permutation_p_val_male, permutation_p_val_female, permutation_p_val_diff, permut_trial = run_permutation_test()
 
         # 7. Run T-test
         t_str = t_test()  # "E", "M", "F", "error"
@@ -514,7 +521,7 @@ if __name__ == "__main__":
         language_index_and_result = (language_index,
                                      lang_index_is_female_more[language_index],
                                      lang_index_is_female_more_t_test[language_index],
-                                     permutation_p_val_male, permutation_p_val_female,
+                                     permutation_p_val_male, permutation_p_val_female, permutation_p_val_diff,
                                      permut_trial)
 
         # 9. Group the language based on the number of color terms
