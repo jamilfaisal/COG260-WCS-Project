@@ -367,14 +367,14 @@ def calculate_permutation_p_values(num_of_terms_ech_male_used, num_of_terms_ech_
     count_no_different_female = count_threshold(permu_expect_array_female, mean_female, 'equal')
     permutation_p_value_female = count_no_different_female / 1000
 
-    count_no_different_diff = count_threshold(permu_expect_array_diff, mean_male-mean_female, 'equal')
+    count_no_different_diff = count_threshold(permu_expect_array_diff, mean_male - mean_female, 'equal')
     permutation_p_value_diff = count_no_different_diff / 1000
 
     return permutation_p_value_male, permutation_p_value_female, permutation_p_value_diff
 
 
 def run_permutation_test():
-    final_permutation_result = ['F', 'F','F']
+    final_permutation_result = ['F', 'F', 'F']
     num_of_terms_each_male_used, num_of_terms_each_female_used = \
         get_number_of_color_term_used(male_indices, female_indices)
     permutation_pval_male, permutation_pval_female, permutation_p_val_diff = \
@@ -444,6 +444,64 @@ def plot_pie_charts_for_lang_groups(language_groups):
             plt.legend(pie[0], mylabels, bbox_to_anchor=(1, 0), loc="lower right",
                        bbox_transform=plt.gcf().transFigure)
         plt.savefig("Pie_Charts/" + str(num_of_b_color_term))
+
+
+def plot_pie_chart_for_all_langs(language_groups):
+    all_responses_in_letters = []
+    for language_group, languages in language_groups.items():
+        for langauge_data in languages:
+            all_responses_in_letters.append(langauge_data[1])
+    mylabels = ["Females More", "Males More", "Equal"]
+    all_responses_counted = [all_responses_in_letters.count("F"), all_responses_in_letters.count("M"),
+                             all_responses_in_letters.count("E")]
+    pie_chart_values = np.array(all_responses_counted)
+    fig, ax = plt.subplots()
+    pie = ax.pie(pie_chart_values, labels=mylabels, autopct='%1.2f%%')
+    ax.axis('equal')
+    plt.title("Result for All Languages Combined", y=1.08)
+    if len(mylabels) > 1:
+        plt.legend(pie[0], mylabels, bbox_to_anchor=(1, 0), loc="lower right", bbox_transform=plt.gcf().transFigure)
+    plt.savefig("Pie_Charts/All_Languages")
+
+
+def plot_stacked_bar_chart(language_groups):
+    fig, ax = plt.subplots()
+    x = sorted([language_group for language_group in language_groups])
+    male_percentages = []
+    female_percentages = []
+    equal_percentages = []
+    for language_group in x:
+        all_responses_in_letters = [lang_data[1] for lang_data in language_groups[language_group]]
+        female_more = all_responses_in_letters.count("F")
+        male_more = all_responses_in_letters.count("M")
+        equal_more = all_responses_in_letters.count("E")
+        female_percentages.append(female_more / len(language_groups[language_group]) * 100)
+        male_percentages.append(male_more / len(language_groups[language_group]) * 100)
+        equal_percentages.append(equal_more / len(language_groups[language_group]) * 100)
+    ax.bar(range(len(x)), female_percentages, width=0.8, label="Female More")
+    ax.bar(range(len(x)), male_percentages, width=0.8, label="Male More", bottom=female_percentages)
+    ax.bar(range(len(x)), equal_percentages, width=0.8, label="Equal",
+           bottom=[x+y for x, y in zip(male_percentages, female_percentages)])
+
+    for rect in ax.patches:
+        height = rect.get_height()
+        width = rect.get_width()
+
+        if height == int(height):
+            label_text = f'{int(height)}%'
+        else:
+            label_text = f'{height:.2f}%'
+
+        label_x = rect.get_x() + width / 2
+        label_y = rect.get_y() + height / 2
+        if height > 0:
+            ax.text(label_x, label_y, label_text, ha='center', va='center', fontsize=8)
+    ax.set_ylabel("Percent of Gender Using More Unique Color Terms")
+    ax.set_xlabel("Group Number")
+    plt.xticks(range(len(x)), x)
+    fig.set_size_inches(15, 7)
+    plt.legend(bbox_to_anchor=(1.04, 1), borderaxespad=0)
+    plt.savefig("Stacked_Bar_Chart/stacked_bar_chart", bbox_inches="tight")
 
 
 if __name__ == "__main__":
@@ -532,11 +590,15 @@ if __name__ == "__main__":
 
     # 10. Plot pie charts for each group
     plot_pie_charts_for_lang_groups(lang_grouping)
+    # 10.1 Plot pie chart for all the languages as one group
+    plot_pie_chart_for_all_langs(lang_grouping)
 
-    # 11. Sort the groups in increasing order based on how many languages they contain
+    # 11. Plot stacked bar chart
+    plot_stacked_bar_chart(lang_grouping)
+    # 12. Sort the groups in increasing order based on how many languages they contain
     lang_grouping_sorted = sort_by_values_len(lang_grouping)
 
-    # 12. Get the most re-occurring key ('M','F','E') of each group and organize other results for display
+    # 13. Get the most re-occurring key ('M','F','E') of each group and organize other results for display
     lang_grouping_unique_most_occur = \
         get_dict_to_list_by_fine_grained_gender_most_occurrence(lang_grouping_sorted, 1)
     lang_grouping_t_test_mean_most_occur = \
