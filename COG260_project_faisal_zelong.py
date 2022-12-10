@@ -548,6 +548,7 @@ def plot_stacked_bar_chart(language_groups):
 
 
 if __name__ == "__main__":
+    plt.rcParams['font.family'] = 'serif' # Globally change plot font to match latex font
     # Language Index, Speaker Index, Color Chip Index, Color Chip Speaker Response
     namingData = readNamingData('./WCS_data_core/term.txt')
     # Language Index, Speaker Index, List[Tuple(Speaker Age, Speaker Gender)]
