@@ -421,6 +421,23 @@ def data_cleaning():
 
 
 def plot_pie_charts_for_lang_groups(language_groups):
+    """
+    Plots and saves one pie chart for each language group. The pie chart shows the percentage of languages based on
+     whether:
+        1. Males used more unique color terms than females
+        2. Females used more unique color terms than males
+        3. Males and Females used the same number of unique color terms
+    Parameters
+    ----------
+    language_groups: Dict
+        key: Number of basic color terms
+        Value: List of all languages that have key as the number of basic color terms. Each element of the list
+            represents information about which gender group used more unique color terms for one language.
+
+    Returns
+    -------
+
+    """
     for num_of_b_color_term, val in language_groups.items():
         all_responses_in_letters = [x[1] for x in val]
         mylabels = []
@@ -447,6 +464,23 @@ def plot_pie_charts_for_lang_groups(language_groups):
 
 
 def plot_pie_chart_for_all_langs(language_groups):
+    """
+    Plots one pie chart for all langauge groups. The pie chart shows the percentage of languages based on
+     whether:
+        1. Males used more unique color terms than females
+        2. Females used more unique color terms than males
+        3. Males and Females used the same number of unique color terms
+    Parameters
+    ----------
+    language_groups: Dict
+        key: Number of basic color terms
+        Value: List of all languages that have key as the number of basic color terms. Each element of the list
+            represents information about which gender group used more unique color terms for one language.
+
+    Returns
+    -------
+
+    """
     all_responses_in_letters = []
     for language_group, languages in language_groups.items():
         for langauge_data in languages:
@@ -465,6 +499,15 @@ def plot_pie_chart_for_all_langs(language_groups):
 
 
 def plot_stacked_bar_chart(language_groups):
+    """
+    Plots and saves a stacked-bar chart representation of plot_pie_chart_for_all_langs.
+    Parameters
+    ----------
+    language_groups: Dict
+        key: Number of basic color terms
+        Value: List of all languages that have key as the number of basic color terms. Each element of the list
+            represents information about which gender group used more unique color terms for one language.
+    """
     fig, ax = plt.subplots()
     x = sorted([language_group for language_group in language_groups])
     male_percentages = []
@@ -527,11 +570,6 @@ if __name__ == "__main__":
     lang_grouping_unique_most_occur = {}
     lang_grouping_t_test_mean_most_occur = {}
 
-    # TODO: Debug code. Remove before submission.
-    female_more_than_male = 0
-    male_more_than_female = 0
-    equal = 0
-
     for language_index in range(1, 111):
 
         # 1. Get speaker data for language
@@ -552,18 +590,6 @@ if __name__ == "__main__":
 
         # 5. Assign the language "F", "M", or "E" based on which letter has the highest count
         lang_index_is_female_more[language_index] = choose_m_f_e_for_lang_index()
-
-        # TODO: Debug code. Remove before submission.
-        if lang_index_is_female_more[language_index] == 'F':
-            female_more_than_male += 1
-        elif lang_index_is_female_more[language_index] == 'M':
-            male_more_than_female += 1
-        else:
-            equal += 1
-        print(language_index, lang_index_is_female_more[language_index])
-        print("Female More: ", female_more_than_male)
-        print("Male More: ", male_more_than_female)
-        print("Equal: ", equal)
 
         # 6. Run permutation test on number of unique terms used by all male and female speakers
         permutation_p_val_male, permutation_p_val_female, permutation_p_val_diff, permut_trial = run_permutation_test()
