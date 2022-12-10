@@ -148,7 +148,7 @@ def run_trials(num_of_trials):
         mean_uniq_color_terms_male = statistics.mean(uniq_male_color_term_each_used)
         mean_uniq_color_term_female = statistics.mean(uniq_female_color_term_each_used)
 
-        # TODO: Remove permutation test for each trial
+        # Removed permutation test for each trial because it is too time-consuming to run
         # p_val_male, p_val_female = permutation(uniq_female_color_term_each_used, uniq_female_color_term_each_used)
         # if p_val_male > 0.05:
         #     permut_trial[0] = 'T'
@@ -305,15 +305,6 @@ def get_dict_to_list_by_fine_grained_gender_most_occurrence(list_of_sorted_lang_
 def count_threshold(permu_lst, mean_threshold, operation_str):
     """
     Helper function for permutation test
-    Parameters
-    ----------
-    permu_lst
-    mean_threshold
-    operation_str
-
-    Returns
-    -------
-
     """
     count = 0
     if operation_str == '<':
@@ -321,12 +312,11 @@ def count_threshold(permu_lst, mean_threshold, operation_str):
             if permu_value < mean_threshold:
                 count += 1
     if operation_str == '==':
-       # permu_lst = map(abs,permu_lst)
         for permu_value in permu_lst:
             if permu_value == mean_threshold:
                 count += 1
     if operation_str == '>=':
-        #null mu_female >= mu_male
+        # null mu_female >= mu_male
         for permu_value in permu_lst:
             if permu_value >= mean_threshold:
                 count += 1
@@ -336,14 +326,6 @@ def count_threshold(permu_lst, mean_threshold, operation_str):
 def calculate_permutation_p_values(num_of_terms_ech_male_used, num_of_terms_ech_female_used):
     """
     Runs a permutation test on the number of unique terms used by males and females
-    Parameters
-    ----------
-    num_of_terms_ech_male_used
-    num_of_terms_ech_female_used
-
-    Returns
-    -------
-
     """
     # permutation test START
     permu_expect_array_male = []
@@ -353,7 +335,6 @@ def calculate_permutation_p_values(num_of_terms_ech_male_used, num_of_terms_ech_
 
     mean_male = statistics.mean(num_of_terms_ech_male_used)
     mean_female = statistics.mean(num_of_terms_ech_female_used)
-    diff = mean_male - mean_female
 
     for i in range(0, 1000):
         all_terms_used_permut = np.random.permutation(all_terms_used)
@@ -373,14 +354,11 @@ def calculate_permutation_p_values(num_of_terms_ech_male_used, num_of_terms_ech_
 
     count_no_different_female = count_threshold(permu_expect_array_female, mean_female, '==')
     permutation_p_value_female = count_no_different_female / 1000
-    # a = lst_to_dict_by_count_element_occurence(permu_expect_array_diff)
-    # b = a.items()
-    # a = plt.bar(a.keys(),a.values())
-    # plt.savefig("Pie_Charts/" + "a")
-    count_no_different_diff = count_threshold(permu_expect_array_diff,mean_male - mean_female, '>=')
+    count_no_different_diff = count_threshold(permu_expect_array_diff, mean_male - mean_female, '>=')
     permutation_p_value_diff = count_no_different_diff / 1000
 
     return permutation_p_value_male, permutation_p_value_female, permutation_p_value_diff
+
 
 def lst_to_dict_by_count_element_occurence(lst):
     dict_counted = {}
@@ -392,6 +370,7 @@ def lst_to_dict_by_count_element_occurence(lst):
 
     return dict_counted
 
+
 def run_permutation_test():
     # null: mean_m == mean_fem
     # alt: mean_fem != fem
@@ -399,15 +378,15 @@ def run_permutation_test():
     final_permutation_result = ['alt', 'alt', 'alt']
     num_of_terms_each_male_used, num_of_terms_each_female_used = \
         get_number_of_color_term_used(male_indices, female_indices)
-    permutation_pval_male, permutation_pval_female, permutation_p_val_diff = \
+    permut_pval_male, permutat_pval_female, permut_p_val_diff = \
         calculate_permutation_p_values(num_of_terms_each_male_used, num_of_terms_each_female_used)
-    if permutation_pval_male > 0.05:
+    if permut_pval_male > 0.05:
         final_permutation_result[0] = 'null'
-    if permutation_pval_female > 0.05:
+    if permutat_pval_female > 0.05:
         final_permutation_result[1] = 'null'
-    if permutation_p_val_diff > 0.05:
+    if permut_p_val_diff > 0.05:
         final_permutation_result[2] = 'null'
-    return permutation_pval_male, permutation_pval_female, permutation_p_val_diff, final_permutation_result
+    return permut_pval_male, permutat_pval_female, permut_p_val_diff, final_permutation_result
 
 
 def get_num_of_basic_color_term(language_idx: int):
@@ -428,7 +407,6 @@ def get_num_of_basic_color_term(language_idx: int):
 
     for speaker_index in fociData[language_idx]:
         num_of_basic_term_for_each_speaker.append(len(fociData[language_idx][speaker_index]))
-    #return statistics.mean(num_of_basic_term_for_each_speaker)
 
     for speaker_index in fociData[language_idx]:
         speaker_count += 1
@@ -442,10 +420,8 @@ def get_num_of_basic_color_term(language_idx: int):
         if all_speaker_response[resp] != '*':
             if all_speaker_response[resp] == speaker_count:
                 bct_response.append(resp)
-    #return len(bct_response)
 
     return max(set(num_of_basic_term_for_each_speaker), key=num_of_basic_term_for_each_speaker.count)
-
 
 
 def data_cleaning():
@@ -567,7 +543,7 @@ def plot_stacked_bar_chart(language_groups):
     ax.bar(range(len(x)), female_percentages, width=0.8, label="Female More")
     ax.bar(range(len(x)), male_percentages, width=0.8, label="Male More", bottom=female_percentages)
     ax.bar(range(len(x)), equal_percentages, width=0.8, label="Equal",
-           bottom=[x+y for x, y in zip(male_percentages, female_percentages)])
+           bottom=[x + y for x, y in zip(male_percentages, female_percentages)])
 
     for rect in ax.patches:
         height = rect.get_height()
@@ -590,12 +566,101 @@ def plot_stacked_bar_chart(language_groups):
     plt.savefig("Stacked_Bar_Chart/stacked_bar_chart", bbox_inches="tight")
 
 
+def generate_latex_tables():
+    lst_group_permu_count = []
+    lst_group_t_count = []
+    total_t_count = [0, 0, 0]
+    total_permu_count = [0, 0]
+
+    lst_group_permu_percent = []
+    lst_group_t_percent = []
+    lst_group_comparison = []
+    for group_index in lang_grouping.keys():
+        group_t_count = [0, 0, 0]
+        group_permu_count = [0, 0]
+        group_comparison_count = [0, 0, 0]
+        for member in lang_grouping[group_index]:
+            t_test_str = member[2]
+            comparison_str = member[1]
+            if t_test_str == 'F':
+                group_t_count[1] += 1
+                total_t_count[1] += 1
+            elif t_test_str == 'M':
+                group_t_count[0] += 1
+                total_t_count[0] += 1
+            elif t_test_str == 'E':
+                group_t_count[2] += 1
+                total_t_count[2] += 1
+
+            if comparison_str == 'F':
+                group_comparison_count[1] += 1
+            elif comparison_str == 'M':
+                group_comparison_count[0] += 1
+            elif comparison_str == 'E':
+                group_comparison_count[2] += 1
+
+            permu_str = member[6][2]
+            if permu_str == 'alt':
+                # null: mu_female
+                group_permu_count[0] += 1
+                total_permu_count[0] += 1
+            elif permu_str == 'null':
+                group_permu_count[1] += 1
+                total_permu_count[1] += 1
+        lst_group_t_count.append(group_t_count)
+        lst_group_permu_count.append(group_permu_count)
+        lst_group_comparison.append(group_comparison_count)
+
+    for group in lst_group_t_count:
+        n = sum(group)
+        lst_group_t_percent.append([int(str_count / n * 100) for str_count in group])
+    for group in lst_group_permu_count:
+        n = sum(group)
+        lst_group_permu_percent.append([int(str_count / n * 100) for str_count in group])
+    # \begin{table}[H]
+    print('\\begin{table}[H]')
+    # \begin{center}
+    print('\\begin{center}')
+    #
+    print('\\caption{Basic Color Term Grouping Results}')
+    #
+    print('\\label{bct-group-table}')
+    print('\\vskip 0.12in')
+    #
+    #
+    print('\\begin{tabular}{clll}')
+    #
+    print('\\hline')
+    #
+    print('Group $\#$     & Female More & Male More & Equal    \\\\')
+    # \hline
+    print('\\hline')
+    #
+
+    for group_ind in range(len(lst_group_comparison)):
+        bct = list(lang_grouping.keys())[group_ind]
+        percent = []
+        for status_ind in range(len(lst_group_comparison[group_ind])):
+            percent.append(lst_group_comparison[group_ind][status_ind] / sum(lst_group_comparison[group_ind]))
+        print('%s       & %s(%s\\%%) & %s(%s\\%%) & %s(%s\\%%)\\\\' % (str(bct),
+                                                                       str(lst_group_comparison[group_ind][1]),
+                                                                       str(round(percent[1], 1) * 100),
+                                                                       str(lst_group_comparison[group_ind][0]),
+                                                                       str(round(percent[0], 1) * 100),
+                                                                       str(lst_group_comparison[group_ind][2]),
+                                                                       str(round(percent[2], 1) * 100),
+                                                                       ))
+
+
 if __name__ == "__main__":
-    plt.rcParams['font.family'] = 'serif' # Globally change plot font to match latex font
+    plt.rcParams['font.family'] = 'serif'  # Globally change plot font to match latex font
+
     # Language Index, Speaker Index, Color Chip Index, Color Chip Speaker Response
     namingData = readNamingData('./WCS_data_core/term.txt')
+
     # Language Index, Speaker Index, List[Tuple(Speaker Age, Speaker Gender)]
     speakerInfo = readSpeakerData('./WCS_data_core/spkr-lsas.txt')
+
     # fociData[1][1]:{'A:0','B:1'} language-speaker-colorterm-foci-coord
     fociData = readFociData('./WCS_data_core/foci-exp.txt')
 
@@ -674,94 +739,5 @@ if __name__ == "__main__":
     lang_grouping_t_test_mean_most_occur = \
         get_dict_to_list_by_fine_grained_gender_most_occurrence(lang_grouping_sorted, 2)
 
-lst_group_permu_count = []
-lst_group_t_count = []
-group_t_count = [0,0,0]
-total_t_count = [0,0,0]
-group_permu_count = [0,0]
-total_permu_count = [0,0]
-
-lst_group_permu_percent = []
-lst_group_t_percent = []
-lst_group_comparison = []
-for group_index in lang_grouping.keys():
-    group_t_count = [0, 0, 0]
-    group_permu_count = [0, 0]
-    group_comparison_count = [0,0,0]
-    for member in lang_grouping[group_index]:
-        t_test_str = member[2]
-        comparison_str = member[1]
-        if t_test_str == 'F':
-            group_t_count[1] += 1
-            total_t_count[1] += 1
-        elif t_test_str == 'M':
-            group_t_count[0] += 1
-            total_t_count[0] += 1
-        elif t_test_str == 'E':
-            group_t_count[2] += 1
-            total_t_count[2] += 1
-
-        if comparison_str == 'F':
-            group_comparison_count[1] += 1
-        elif comparison_str == 'M':
-            group_comparison_count[0] += 1
-        elif comparison_str == 'E':
-            group_comparison_count[2] += 1
-
-
-        permu_str = member[6][2]
-        if permu_str == 'alt':
-            # null: mu_female
-            group_permu_count[0] += 1
-            total_permu_count[0] += 1
-        elif permu_str == 'null':
-            group_permu_count[1] += 1
-            total_permu_count[1] += 1
-    lst_group_t_count.append(group_t_count)
-    lst_group_permu_count.append(group_permu_count)
-    lst_group_comparison.append(group_comparison_count)
-
-for group in lst_group_t_count:
-    n = sum(group)
-    lst_group_t_percent.append([int(str_count/n*100) for str_count in group])
-for group in lst_group_permu_count:
-    n = sum(group)
-    lst_group_permu_percent.append([int(str_count/n*100) for str_count in group])
-n = sum(total_t_count)
-total_t_percent = [int(str_count/n*100) for str_count in total_t_count]
-n = sum(total_permu_count)
-total_permu_percent = [int(str_count/n*100) for str_count in total_permu_count]
-a= 1
-# \begin{table}[H]
-print('\\begin{table}[H]')
-# \begin{center}
-print('\\begin{center}')
-#
-print('\\caption{Basic Color Term Grouping Results}')
-#
-print('\\label{bct-group-table}')
-print('\\vskip 0.12in')
-#
-#
-print('\\begin{tabular}{clll}')
-#
-print('\\hline')
-#
-print('Group $\#$     & Female More & Male More & Equal    \\\\')
-# \hline
-print('\\hline')
-#
-
-for group_ind in range(len(lst_group_comparison)):
-    bct = list(lang_grouping.keys())[group_ind]
-    percent = []
-    for status_ind in range(len(lst_group_comparison[group_ind])):
-        percent.append(lst_group_comparison[group_ind][status_ind]/sum(lst_group_comparison[group_ind]))
-    print('%s       & %s(%s\\%%) & %s(%s\\%%) & %s(%s\\%%)\\\\' %(str(bct),
-                                                          str(lst_group_comparison[group_ind][1]),
-                                                          str(round(percent[1],1)*100),
-                                                         str(lst_group_comparison[group_ind][0]),
-                                                         str(round(percent[0],1)*100),
-                                                         str(lst_group_comparison[group_ind][2]),
-                                                         str(round(percent[2],1)*100),
-                                                          ))
+    # 14. Print data in latex form to generate a table
+    generate_latex_tables()
